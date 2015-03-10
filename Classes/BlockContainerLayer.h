@@ -30,7 +30,10 @@ public:
 	virtual void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4& transform, uint32_t flags);
 	BlockContainerLayer(int rowcount, int blockwidth, int linewidth, cocos2d::Color4F backcolor) :RowCount(rowcount), BlockWidth(blockwidth), LineWidth(linewidth),BackColor(backcolor),Layer(){}
 	cocos2d::Vec2 PointtoClient(int num);
+	~BlockContainerLayer()
+	{
 
+	}
 };
 
 

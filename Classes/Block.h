@@ -12,6 +12,10 @@ public:
 	Block(int index, cocos2d::Color4F backcolor) :Index(index), BackColor(backcolor)
 	{
 	};
+	~Block()
+	{
+
+	}
 	virtual void setIndex(int index);
 	virtual int getIndex();
 	virtual void setBackColor(cocos2d::Color4F backcolor);

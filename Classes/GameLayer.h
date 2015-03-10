@@ -2,7 +2,9 @@
 #define _GAMELAYER_H_
 
 #include "cocos2d.h"
-#include "GameController.h"
+
+class GameController;
+class GameMenuLayer;
 
 class GameLayer:public cocos2d::Layer
 {
@@ -11,9 +13,14 @@ public:
 	virtual bool init();
 	CREATE_FUNC(GameLayer);
 	GameController* controller;
+	GameMenuLayer* gameMenuLayer;
+	GameLayer() : gameMenuLayer(0), controller(0)
+	{
+
+	}
 	~GameLayer();
 private:
-	void GameLayer::onKeyPressed(cocos2d::EventKeyboard::KeyCode keycode, cocos2d::Event* event);
+	void onKeyPressed(cocos2d::EventKeyboard::KeyCode keycode, cocos2d::Event* event);
 };
 
 #endif

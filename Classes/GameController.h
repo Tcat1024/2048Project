@@ -17,24 +17,17 @@ class Block;
 class GameController
 {
 public:
-	void Action(ACTION_TYPE type);
+	bool Action(ACTION_TYPE type);
 	void Start();
-	GameController(BlockContainerLayer* checkboard, int rowcount) :checkerBoard(checkboard), rowCount(rowcount)
+	GameController(BlockContainerLayer* checkboard, int rowcount) :checkerBoard(checkboard), rowCount(rowcount), lock(0)
 	{
 		int maxcount = rowcount*rowcount;
 		blocks = new Block*[maxcount];
 		check = new bool[maxcount];
-		for (int i = 0; i < maxcount; i++)
-			check[i] = false;
 	}
+	void Reset();
 	~GameController()
 	{
-		Block* temp;
-		for (int i = 0; i < rowCount*rowCount; i++)
-		{
-			if (check[i])
-				delete(this->blocks[i]);
-		}
 		delete[] blocks;
 		delete[] check;
 	}
@@ -53,7 +46,9 @@ protected:
 	cocos2d::Color4F GameController::getColor(int index, cocos2d::Color4F color = cocos2d::Color4F(0, 0, 0, 0));
 	bool* check;
 	Block** blocks;
+	int lock;
 	int getFreeBlockCount();
+	bool checkGameOver();
 };
 
 #endif

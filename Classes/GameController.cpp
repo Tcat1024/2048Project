@@ -1,13 +1,20 @@
 #include "GameController.h"
 #include "Block.h"
 #include "BlockContainerLayer.h"
-#include "HelloWorldScene.h"
+#include "GameOverLayer.h"
 using namespace cocos2d;
 
 void GameController::Start()
 {
+	this->checkerBoard->removeAllChildrenWithCleanup(true);
+	Reset();
 	newRandomBlock();
 	newRandomBlock();
+}
+void GameController::Reset()
+{
+	for (int i = 0; i < rowCount*rowCount; i++)
+		check[i] = false;
 }
 Block* GameController::newBlock(int index)
 {
@@ -68,9 +75,22 @@ void GameController::addBlock(int num, Block* target)
 }
 void GameController::moveBlock(int onum, int nnum)
 {
-	Block* temp = this->blocks[onum];
-	this->blocks[nnum] = temp;
-	temp->setPosition(checkerBoard->PointtoClient(nnum));
+	Block* temp = this->blocks[nnum];
+	this->blocks[nnum] = this->blocks[onum];
+	auto moveto = MoveTo::create(0.05, checkerBoard->PointtoClient(nnum));
+	this->lock++;
+	if (this->check[nnum])
+	{
+		auto actionMoveDone = CallFunc::create([this, temp](){ this->checkerBoard->removeChild(temp); this->lock--; });
+		this->blocks[nnum]->runAction(Sequence::create(moveto, actionMoveDone,NULL));
+		//checkerBoard->removeChild(temp);
+	}
+	else
+	{
+		auto actionMoveDone = CallFunc::create([this](){ this->lock--; });
+		this->blocks[nnum]->runAction(Sequence::create(moveto, actionMoveDone,NULL));
+	}
+	//this->blocks[nnum]->setPosition(checkerBoard->PointtoClient(nnum));
 	this->check[onum] = false;
 	this->check[nnum] = true;
 }
@@ -130,8 +150,10 @@ int GameController::getFreeBlockCount()
 	}
 	return count;
 }
-void GameController::Action(ACTION_TYPE type)
+bool GameController::Action(ACTION_TYPE type)
 {
+	if (lock != 0)
+		return true;
 	int maxcount = rowCount*rowCount, i = 0,j=0,col=0,row=0,bnum,tnum,index;
 	bool has = false;
 	switch (type)
@@ -157,7 +179,7 @@ void GameController::Action(ACTION_TYPE type)
 						{
 							if (fight(this->blocks[bnum], this->blocks[tnum]))
 							{
-								removeBlock(tnum);
+								//removeBlock(tnum);
 								moveBlock(bnum, tnum);
 								index = this->blocks[tnum]->getIndex() * 2;
 								this->blocks[tnum]->setIndex(index);
@@ -203,7 +225,7 @@ void GameController::Action(ACTION_TYPE type)
 						{
 							if (fight(this->blocks[bnum], this->blocks[tnum]))
 							{
-								removeBlock(tnum);
+								//removeBlock(tnum);
 								moveBlock(bnum, tnum);
 								index = this->blocks[tnum]->getIndex() * 2;
 								this->blocks[tnum]->setIndex(index);
@@ -249,7 +271,7 @@ void GameController::Action(ACTION_TYPE type)
 						{
 							if (fight(this->blocks[bnum], this->blocks[tnum]))
 							{
-								removeBlock(tnum);
+								//removeBlock(tnum);
 								moveBlock(bnum, tnum);
 								index = this->blocks[tnum]->getIndex() * 2;
 								this->blocks[tnum]->setIndex(index);
@@ -295,7 +317,7 @@ void GameController::Action(ACTION_TYPE type)
 						{
 							if (fight(this->blocks[bnum], this->blocks[tnum]))
 							{
-								removeBlock(tnum);
+								//removeBlock(tnum);
 								moveBlock(bnum, tnum);
 								index = this->blocks[tnum]->getIndex() * 2;
 								this->blocks[tnum]->setIndex(index);
@@ -326,10 +348,35 @@ void GameController::Action(ACTION_TYPE type)
 	if (has)
 	{
 		if (!newRandomBlock())
-			Director::getInstance()->replaceScene(HelloWorld::createScene());
+			return false;
 	}
-	else if (getFreeBlockCount() == 0)
+	else if (getFreeBlockCount() == 0&&checkGameOver())
 	{
-		Director::getInstance()->replaceScene(HelloWorld::createScene());
+		return false;
 	}
+	return true;
+}
+bool GameController::checkGameOver()
+{
+	int i, j;
+	for (i = 0; i < rowCount-1; i++)
+	{
+		for (j = 0; j < rowCount-1; j++)
+		{
+			if (this->blocks[i*rowCount + j]->getIndex() == this->blocks[i*rowCount + j + 1]->getIndex() || this->blocks[i*rowCount + j]->getIndex() == this->blocks[i*rowCount + j + rowCount]->getIndex())
+			{
+				return false;
+			}
+		}
+		if (this->blocks[i*rowCount + rowCount - 1]->getIndex() == this->blocks[i*rowCount + rowCount - 1 + rowCount]->getIndex())
+			return false;
+	}
+	for (j = 0; j < rowCount - 1; j++)
+	{
+		if (this->blocks[i*rowCount + j]->getIndex() == this->blocks[i*rowCount + j + 1]->getIndex())
+		{
+			return false;
+		}
+	}
+	return true;
 }

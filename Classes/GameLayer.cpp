@@ -1,8 +1,10 @@
 #include "GameLayer.h"
 #include "BlockContainerLayer.h"
+#include "GameController.h"
+#include "GameMenuLayer.h"
+#include "KeyBoardListenerManager.h"
 
 using namespace cocos2d;
-
 
 bool GameLayer::init()
 {
@@ -13,40 +15,46 @@ bool GameLayer::init()
 	int per = min - min % 10;
 	int width = (RowCount + ((float)RowCount + 1) / 10 )* per;
 	auto *blockcontainer = BlockContainerLayer::create(RowCount,per,per/10);
-	this->addChild(blockcontainer);
+	this->addChild(blockcontainer,0);
 	blockcontainer->setContentSize(Size(width, width));
 	blockcontainer->setPosition((size.width - width) / 2, (size.height - width) / 2);
 	controller = new GameController(blockcontainer, RowCount);
 	controller->Start();
 	auto listener = EventListenerKeyboard::create();
 	listener->onKeyPressed = CC_CALLBACK_2(GameLayer::onKeyPressed, this);
-	listener->onKeyReleased = CC_CALLBACK_2(GameLayer::onKeyReleased, this);
-	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+	_eventDispatcher->addEventListenerWithFixedPriority(listener,10);
+	KeyBoardListenerManager::Push(listener);
 	return true;
 }
 GameLayer::~GameLayer()
 {
-	if (controller != 0)
+	KeyBoardListenerManager::Pop();
+	if (controller != nullptr)
 		delete controller;
-	Layer::~Layer();
 }
 void GameLayer::onKeyPressed(EventKeyboard::KeyCode keycode, Event* event)
 {
+	bool result = true;
 	switch (keycode)
 	{
 	case EventKeyboard::KeyCode::KEY_UP_ARROW:
-		((GameLayer*)event->getCurrentTarget())->controller->Action(ACTION_TYPE::UP);
+		result = this->controller->Action(ACTION_TYPE::UP);
 		break;
 	case EventKeyboard::KeyCode::KEY_DOWN_ARROW:
-		((GameLayer*)event->getCurrentTarget())->controller->Action(ACTION_TYPE::DOWN);
+		result = this->controller->Action(ACTION_TYPE::DOWN);
 		break; 
 	case EventKeyboard::KeyCode::KEY_LEFT_ARROW:
-		((GameLayer*)event->getCurrentTarget())->controller->Action(ACTION_TYPE::LEFT);
+		result = this->controller->Action(ACTION_TYPE::LEFT);
 		break;
 	case EventKeyboard::KeyCode::KEY_RIGHT_ARROW:
-		((GameLayer*)event->getCurrentTarget())->controller->Action(ACTION_TYPE::RIGHT);
+		result = this->controller->Action(ACTION_TYPE::RIGHT);
 		break;
 	default:
 		break;
 	}
+	if (!result)
+	{
+		this->addChild(GameMenuLayer::create(MenuMode::OVER), 10);
+	}
 }
+
