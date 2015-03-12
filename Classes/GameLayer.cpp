@@ -22,18 +22,19 @@ bool GameLayer::init()
 	controller->Start();
 	auto listener = EventListenerKeyboard::create();
 	listener->onKeyPressed = CC_CALLBACK_2(GameLayer::onKeyPressed, this);
-	_eventDispatcher->addEventListenerWithFixedPriority(listener,10);
-	KeyBoardListenerManager::Push(listener);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener,this);
+	//KeyBoardListenerManager::Push(listener);
 	return true;
 }
 GameLayer::~GameLayer()
 {
-	KeyBoardListenerManager::Pop();
+	_eventDispatcher->removeEventListenersForTarget(this);
 	if (controller != nullptr)
 		delete controller;
 }
 void GameLayer::onKeyPressed(EventKeyboard::KeyCode keycode, Event* event)
 {
+	event->stopPropagation();
 	bool result = true;
 	switch (keycode)
 	{
@@ -54,7 +55,7 @@ void GameLayer::onKeyPressed(EventKeyboard::KeyCode keycode, Event* event)
 	}
 	if (!result)
 	{
-		this->addChild(GameMenuLayer::create(MenuMode::OVER), 10);
+		this->addChild(GameOverMenuLayer::create(), 10);
 	}
 }
 

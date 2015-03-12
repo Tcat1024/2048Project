@@ -7,9 +7,8 @@ class Block : public cocos2d::Sprite
 {
 public:
 	cocos2d::Color4F BackColor;
-	virtual bool init();
 	virtual void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4& transform, uint32_t flags);
-	Block(int index, cocos2d::Color4F backcolor) :Index(index), BackColor(backcolor)
+	Block(int index, cocos2d::Color4F backcolor) :Index(index), BackColor(backcolor), label(0)
 	{
 	};
 	~Block()
@@ -20,10 +19,12 @@ public:
 	virtual int getIndex();
 	virtual void setBackColor(cocos2d::Color4F backcolor);
 	static Block* create(int index, cocos2d::Color4F backcolor);
-	void resize();
 	bool Invincible;
 protected:
-	cocos2d::Label* label = nullptr;
+	virtual bool init();
+	void resize();
+	void virtual onEnterTransitionDidFinish();
+	cocos2d::Label* label;
 	int Index;
 	int Width;
 };

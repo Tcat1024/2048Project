@@ -8,7 +8,7 @@ class KeyBoardListenerManager
 {
 public:
 	static void Push(cocos2d::EventListenerKeyboard*);
-	static void Pop();
+	static void Pop(cocos2d::EventListenerKeyboard*);
 	static void Clear();
 	~KeyBoardListenerManager()
 	{

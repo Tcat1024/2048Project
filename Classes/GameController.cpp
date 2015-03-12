@@ -66,10 +66,9 @@ Color4F GameController::getColor(int index,Color4F color)
 }
 void GameController::addBlock(int num, Block* target)
 {
-	this->checkerBoard->addChild(target);
 	target->setContentSize(Size(checkerBoard->BlockWidth, checkerBoard->BlockWidth));
+	this->checkerBoard->addChild(target);
 	target->setPosition(checkerBoard->PointtoClient(num));
-	target->resize();
 	this->check[num] = true;
 	this->blocks[num] = target;
 }

@@ -15,7 +15,6 @@ bool Block::init()
 	this->setBackColor(BackColor);
 	this->setAnchorPoint(Point(0, 0));
 	label = Label::create(std::to_string(Index), "Arial", 48);
-	label->setAnchorPoint(Point(0, 0));
 	this->addChild(label);
 	Invincible = true;
 	return true;
@@ -30,10 +29,13 @@ void Block::setIndex(int index)
 		return;
 	}
 	label = Label::create(std::to_string(Index), "Arial", 48);
-	label->setAnchorPoint(Point(0, 0));
 	this->addChild(label);
 	resize();
-	//resize();
+}
+void Block::onEnterTransitionDidFinish()
+{
+	resize();
+	Sprite::onEnterTransitionDidFinish();
 }
 void Block::setBackColor(Color4F backcolor)
 {
@@ -41,13 +43,13 @@ void Block::setBackColor(Color4F backcolor)
 }
 void Block::resize()
 {
-	int width = this->getContentSize().width;
+	auto size = this->getContentSize();
 	if (label != nullptr)
 	{
 		Size temps = label->getContentSize();
-		float sc = ((float)width / 2) / temps.height;
+		float sc = ((float)size.width / 2) / temps.height;
 		label->setScale(sc);
-		label->setPosition(Point((width - (float)temps.width*sc) / 2, (width - (float)temps.height*sc) / 2-2));
+		label->setPosition(Point(size.width/ 2,size.height/2 ));
 	}
 }
 Block* Block::create(int index,Color4F backcolor)
