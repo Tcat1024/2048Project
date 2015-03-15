@@ -1,30 +1,69 @@
 #include "GameMenuLayer.h"
-#include "KeyBoardListenerManager.h"
-#include "StartLayer.h"
+#include "GameLayer.h"
 
 using namespace cocos2d;
 
 
 void Restart()
 {
-	Director::getInstance()->replaceScene(StartLayer::createScene());
+	Director::getInstance()->replaceScene(GameLayer::createScene());
 }
 void Resume(Layer* menu)
 {
 	menu->removeFromParentAndCleanup(true);
 }
-void BackToMainMenu()
+void MainMenu()
 {
-
+	Director::getInstance()->replaceScene(MainMenuLayer::createScene());
 }
 void Exit()
 {
 	exit(0);
 }
+bool GamePausedMenuLayer::init()
+{
+	if (!Layer::init())
+		return false;
+	buttoncount = 4;
+	buttons = new Button[buttoncount];
+	backGround = LayerColor::create();
+	backGround->setColor(Color3B(0, 0, 0));
+	backGround->setOpacity(150);
+	backGround->retain();
+	std::string font = "Arial";
+	title = Label::create("Paused", font, 200);
+	title->retain();
+	buttons[0].setLabel(Label::create("Resume", font, 200));
+	buttons[1].setLabel(Label::create("Restart", font, 200));
+	buttons[2].setLabel(Label::create("Main Menu", font, 200));
+	buttons[3].setLabel(Label::create("Exit Game", font, 200));
+	Button::FUNCTYPE temp = std::bind(Resume,this);
+	//auto temp = std::bind(&Restart);
+	buttons[0].setFunc(temp);
+	temp = Restart;
+	buttons[1].setFunc(temp);
+	temp = MainMenu;
+	buttons[2].setFunc(temp);	
+	temp = Exit;
+	buttons[3].setFunc(temp);
+	_selectedindex = 0;
+	this->addChild(backGround, BACKGROUNDLAYER);
+	this->addChild(title, TITLELAYER);
+	for (int i = 0; i < buttoncount; i++)
+	{
+		this->addChild(buttons[i].getLabel(), BUTTONLAYER);
+	}
+	auto listener = EventListenerKeyboard::create();
+	listener->onKeyPressed = CC_CALLBACK_2(GamePausedMenuLayer::onKeyPressed, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+	//KeyBoardListenerManager::Push(listener);
+	return true;
+}
 bool GameOverMenuLayer::init()
 {
 	if (!Layer::init())
 		return false;
+	buttoncount = 3;
 	buttons = new Button[buttoncount];
 	backGround = LayerColor::create();
 	backGround->setColor(Color3B(0, 0, 0));
@@ -34,19 +73,19 @@ bool GameOverMenuLayer::init()
 	title = Label::create("GameOver", font, 200);
 	title->retain();
 	buttons[0].setLabel(Label::create("Restart", font, 200));
-	buttons[1].setLabel(Label::create("Back to Main Menu", font, 200));
+	buttons[1].setLabel(Label::create("Main Menu", font, 200));
 	buttons[2].setLabel(Label::create("Exit Game", font, 200));
 	Button::FUNCTYPE temp = Restart;
 	//auto temp = std::bind(&Restart);
 	buttons[0].setFunc(temp);
-	temp = std::bind(Resume, this);
+	temp = MainMenu;
 	buttons[1].setFunc(temp);
 	temp = Exit;
 	buttons[2].setFunc(temp);
 	_selectedindex = 0;
 	this->addChild(backGround, BACKGROUNDLAYER);
 	this->addChild(title, TITLELAYER);
-	for (int i = 0; i < 3;i++)
+	for (int i = 0; i < buttoncount; i++)
 	{
 		this->addChild(buttons[i].getLabel(), BUTTONLAYER);
 	}
@@ -56,7 +95,7 @@ bool GameOverMenuLayer::init()
 	//KeyBoardListenerManager::Push(listener);
 	return true;
 }
-void GameOverMenuLayer::reSize()
+void MenuLayer::reSize()
 {
 	auto parent = this->getParent();
 	if (parent != 0)
@@ -69,7 +108,7 @@ void GameOverMenuLayer::reSize()
 	}
 	Select(_selectedindex);
 }
-void GameOverMenuLayer::reSize(const Size& size)
+void MenuLayer::reSize(const Size& size)
 {
 	this->setContentSize(size);
 	this->backGround->setContentSize(size);
@@ -90,33 +129,37 @@ void GameOverMenuLayer::reSize(const Size& size)
 		buttons[i].getLabel()->setScale(feach / buttons[i].getLabel()->getContentSize().height);
 	}
 }
-void GameOverMenuLayer::onKeyPressed(EventKeyboard::KeyCode keycode, Event* event)
+void MenuLayer::onKeyPressed(EventKeyboard::KeyCode keycode, Event* event)
 {
 	event->stopPropagation();
+	int temp = _selectedindex;
 	switch (keycode)
 	{
 	case EventKeyboard::KeyCode::KEY_UP_ARROW:
-		Select((_selectedindex + buttoncount - 1) % buttoncount);
+		while ((temp = (temp + buttoncount - 1) % buttoncount) != _selectedindex&&!buttons[temp].Enable);
+		if (temp!=_selectedindex)
+			Select(temp);
 		break;
 	case EventKeyboard::KeyCode::KEY_DOWN_ARROW:
-		Select((_selectedindex + 1) % buttoncount);
+		while ((temp = (temp + 1) % buttoncount) != _selectedindex&&!buttons[temp].Enable);
+		if (temp != _selectedindex)
+			Select(temp);
 		break;
 	case EventKeyboard::KeyCode::KEY_KP_ENTER:
-		Access(_selectedindex);
+		Access(temp);
 		break;
 	default:
 		break;
 	}
 }
-void GameOverMenuLayer::onEnterTransitionDidFinish()
+void MenuLayer::onEnterTransitionDidFinish()
 {
 	reSize();
-	Layer::onEnter();
+	Layer::onEnterTransitionDidFinish();
 }
-GameOverMenuLayer::~GameOverMenuLayer()
+MenuLayer::~MenuLayer()
 {
 	//KeyBoardListenerManager::Pop();
-
 	_eventDispatcher->removeEventListenersForTarget(this);
 	if (buttons != 0)
 		delete[] buttons;
@@ -125,7 +168,7 @@ GameOverMenuLayer::~GameOverMenuLayer()
 	if (title != 0)
 		title->release();
 }
-void GameOverMenuLayer::Select(int index)
+void MenuLayer::Select(const int &index)
 {
 	if (_selectedindex < buttoncount&&_selectedindex >= 0 && index != _selectedindex)
 	{
@@ -138,10 +181,59 @@ void GameOverMenuLayer::Select(int index)
 	buttons[index].getLabel()->setTextColor(Color4B(255, 148, 110, 255));
 	_selectedindex = index;
 }
-void GameOverMenuLayer::Access(int index)
+void MenuLayer::Access(const int &index)
 {
 	if (index >= 0 && index < buttoncount)
 	{
-		(buttons[index].getFunc())();
+		buttons[index].Clicked();
 	}
+}
+Scene* MainMenuLayer::createScene()
+{
+	auto *scene = Scene::create();
+	auto *layer = MainMenuLayer::create();
+	scene->addChild(layer);
+	return scene;
+}
+bool MainMenuLayer::init()
+{
+	if (!Layer::init())
+		return false;
+	buttoncount = 4;
+	buttons = new Button[buttoncount];
+	backGround = LayerColor::create();
+	backGround->setColor(Color3B(0, 0, 0));
+	backGround->retain();
+	std::string font = "Arial";
+	title = Label::create("2048", font, 200);
+	title->retain();
+	buttons[0].setLabel(Label::create("New Game", font, 200));
+	buttons[1].setLabel(Label::create("Continue", font, 200));
+	buttons[1].getLabel()->setTextColor(Color4B(140, 140, 140, 255));
+	buttons[1].Enable = false;
+	buttons[2].setLabel(Label::create("Score List", font, 200));	
+	buttons[2].getLabel()->setTextColor(Color4B(140, 140, 140, 255));
+	buttons[2].Enable = false;
+	buttons[3].setLabel(Label::create("Exit Game", font, 200));
+	Button::FUNCTYPE temp = Restart;
+	//auto temp = std::bind(&Restart);
+	buttons[0].setFunc(temp);
+
+	//buttons[1].setFunc(temp);
+	//temp = MainMenu;
+	//buttons[2].setFunc(temp);
+	temp = Exit;
+	buttons[3].setFunc(temp);
+	_selectedindex = 0;
+	this->addChild(backGround, BACKGROUNDLAYER);
+	this->addChild(title, TITLELAYER);
+	for (int i = 0; i < buttoncount; i++)
+	{
+		this->addChild(buttons[i].getLabel(), BUTTONLAYER);
+	}
+	auto listener = EventListenerKeyboard::create();
+	listener->onKeyPressed = CC_CALLBACK_2(MainMenuLayer::onKeyPressed, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+	//KeyBoardListenerManager::Push(listener);
+	return true;
 }

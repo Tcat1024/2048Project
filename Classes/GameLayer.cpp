@@ -6,6 +6,13 @@
 
 using namespace cocos2d;
 
+Scene* GameLayer::createScene()
+{
+	auto *scene = Scene::create();
+	auto *layer = GameLayer::create();
+	scene->addChild(layer);
+	return scene;
+}
 bool GameLayer::init()
 {
 	if (!Layer::init())
@@ -49,6 +56,9 @@ void GameLayer::onKeyPressed(EventKeyboard::KeyCode keycode, Event* event)
 		break;
 	case EventKeyboard::KeyCode::KEY_RIGHT_ARROW:
 		result = this->controller->Action(ACTION_TYPE::RIGHT);
+		break;
+	case EventKeyboard::KeyCode::KEY_ESCAPE:
+		this->addChild(GamePausedMenuLayer::create(), 10);
 		break;
 	default:
 		break;
