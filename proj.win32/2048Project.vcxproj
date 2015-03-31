@@ -143,8 +143,7 @@ xcopy /Y /Q "$(EngineRoot)external\websockets\prebuilt\win32\*.*" "$(OutDir)"</C
     <ClCompile Include="..\Classes\GameController.cpp" />
     <ClCompile Include="..\Classes\GameLayer.cpp" />
     <ClCompile Include="..\Classes\GameMenuLayer.cpp" />
-    <ClCompile Include="..\Classes\KeyBoardListenerManager.cpp" />
-    <ClCompile Include="..\Classes\StartLayer.cpp" />
+    <ClCompile Include="..\Classes\sqlite3.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -154,8 +153,7 @@ xcopy /Y /Q "$(EngineRoot)external\websockets\prebuilt\win32\*.*" "$(OutDir)"</C
     <ClInclude Include="..\Classes\GameController.h" />
     <ClInclude Include="..\Classes\GameLayer.h" />
     <ClInclude Include="..\Classes\GameMenuLayer.h" />
-    <ClInclude Include="..\Classes\KeyBoardListenerManager.h" />
-    <ClInclude Include="..\Classes\StartLayer.h" />
+    <ClInclude Include="..\Classes\sqlite3.h" />
     <ClInclude Include="main.h" />
   </ItemGroup>
   <ItemGroup>

@@ -19,7 +19,7 @@ class GameController
 public:
 	bool Action(ACTION_TYPE type);
 	void Start();
-	GameController(BlockContainerLayer* checkboard, int rowcount) :checkerBoard(checkboard), rowCount(rowcount), lock(0)
+	GameController(BlockContainerLayer* checkboard, int rowcount) :checkerBoard(checkboard), rowCount(rowcount), lock(0), saved(false)
 	{
 		int maxcount = rowcount*rowcount;
 		blocks = new Block*[maxcount];
@@ -31,11 +31,15 @@ public:
 		delete[] blocks;
 		delete[] check;
 	}
+	void Save();
+	void Load();
+	static bool CheckSave();
+	bool saved;
 protected:
 	bool newRandomBlock();
 	BlockContainerLayer* checkerBoard;
 	int rowCount;
-	Block* newBlock(int index);
+	Block* newBlock(int index,cocos2d::Color4F color);
 	bool fight(Block* a, Block* b);
 	void addBlock(int num, Block* target);
 	void moveBlock(int onum, int nnum);

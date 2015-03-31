@@ -6,12 +6,13 @@
 
 using namespace cocos2d;
 
-Scene* GameLayer::createScene()
+bool GameScene::init()
 {
-	auto *scene = Scene::create();
-	auto *layer = GameLayer::create();
-	scene->addChild(layer);
-	return scene;
+	if (!Scene::init())
+		return false;
+	mainLayer = GameLayer::create();
+	this->addChild(mainLayer);
+	return true;
 }
 bool GameLayer::init()
 {
@@ -26,7 +27,6 @@ bool GameLayer::init()
 	blockcontainer->setContentSize(Size(width, width));
 	blockcontainer->setPosition((size.width - width) / 2, (size.height - width) / 2);
 	controller = new GameController(blockcontainer, RowCount);
-	controller->Start();
 	auto listener = EventListenerKeyboard::create();
 	listener->onKeyPressed = CC_CALLBACK_2(GameLayer::onKeyPressed, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener,this);
@@ -36,6 +36,8 @@ bool GameLayer::init()
 GameLayer::~GameLayer()
 {
 	_eventDispatcher->removeEventListenersForTarget(this);
+	if (!controller->saved)
+		controller->Save();
 	if (controller != nullptr)
 		delete controller;
 }
@@ -68,4 +70,19 @@ void GameLayer::onKeyPressed(EventKeyboard::KeyCode keycode, Event* event)
 		this->addChild(GameOverMenuLayer::create(), 10);
 	}
 }
-
+void GameLayer::StartNewGame()
+{
+	this->controller->Start();
+}
+void GameLayer::LoadGame()
+{
+	this->controller->Load();
+}
+bool GameLayer::CheckSaveData()
+{
+	return GameController::CheckSave();
+}
+void GameLayer::SaveGame()
+{
+	this->controller->Save();
+}

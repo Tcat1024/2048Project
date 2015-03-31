@@ -2,6 +2,7 @@
 #include "Block.h"
 #include "BlockContainerLayer.h"
 #include "GameOverLayer.h"
+#include "sqlite3.h"
 using namespace cocos2d;
 
 void GameController::Start()
@@ -16,9 +17,9 @@ void GameController::Reset()
 	for (int i = 0; i < rowCount*rowCount; i++)
 		check[i] = false;
 }
-Block* GameController::newBlock(int index)
+Block* GameController::newBlock(int index,Color4F color)
 {
-	return Block::create(index, getColor(index));
+	return Block::create(index, color);
 }
 Color4F GameController::getColor(int index,Color4F color)
 {
@@ -128,12 +129,14 @@ bool GameController::newRandomBlock()
 	if (count == 0)
 		return false;
 	int index = random(1, count);
+	int num;
 	count = 1;
 	for (int i = 0; i < rowCount*rowCount; i++)
 	{
 		if (!check[i] && count++ == index)
 		{
-			addBlock(i, newBlock(random(1,2)*2));
+			num = random(1, 2) * 2;
+			addBlock(i, newBlock(num,getColor(num)));
 			return true;
 		}
 	}
@@ -202,6 +205,7 @@ bool GameController::Action(ACTION_TYPE type)
 				}
 			}	
 		}
+		saved = false;
 		break;
 	case ACTION_TYPE::UP:
 		for (col = 0; col < rowCount; col++)
@@ -248,6 +252,7 @@ bool GameController::Action(ACTION_TYPE type)
 				}
 			}
 		}
+		saved = false;
 		break;
 	case ACTION_TYPE::LEFT:
 		for (row = 0; row < rowCount; row++)
@@ -294,6 +299,7 @@ bool GameController::Action(ACTION_TYPE type)
 				}
 			}
 		}
+		saved = false;
 		break;
 	case ACTION_TYPE::RIGHT:
 		for (row = 0; row < rowCount; row++)
@@ -340,6 +346,7 @@ bool GameController::Action(ACTION_TYPE type)
 				}
 			}
 		}
+		saved = false;
 		break;
 	default:
 		break;
@@ -378,4 +385,153 @@ bool GameController::checkGameOver()
 		}
 	}
 	return true;
+}
+void GameController::Save()
+{
+	sqlite3 *db;
+	int result;
+	String path = CCFileUtils::getInstance()->getWritablePath() + "Data";
+	char** table = NULL;
+	char * errormessage = NULL;
+	int r, c;
+	if ((result = sqlite3_open(path.getCString(), &db)) != SQLITE_OK)
+	{
+		log("Open database failed, error:%d", result);
+		return;
+	}
+	do
+	{
+		if ((result = sqlite3_get_table(db, "SELECT * FROM sqlite_master where type='table' and name='savedata'", &table, &r, &c, &errormessage)) != SQLITE_OK)
+		{
+			log("Quary table failed, error:%s", errormessage);
+			break;
+		}
+		if (r == 0 && (result = sqlite3_exec(db, "create table savedata(num integer,ind integer,R real,G real,B real)", NULL, NULL, &errormessage)) != SQLITE_OK)
+		{
+			log("Create table failed, error:%s", errormessage);
+			break;
+		}
+		if (r != 0 && (result = sqlite3_exec(db, "delete from saveData", NULL, NULL, &errormessage)) != SQLITE_OK)
+		{
+			log("Delete table failed, error:%s", errormessage);
+			break;
+		}
+		int maxcount = rowCount*rowCount;
+		Block *temp;
+		String insertstring;
+		for (int i = 0; i < maxcount; i++)
+		{
+			if (check[i])
+			{
+				temp = blocks[i];
+				insertstring.initWithFormat("insert into savedata values (%d,%d,%.3f,%.3f,%.3f)", i, temp->getIndex(), temp->BackColor.r, temp->BackColor.g, temp->BackColor.b);
+				if ((result = sqlite3_exec(db, insertstring.getCString(), NULL, NULL, &errormessage)) != SQLITE_OK)
+				{
+					log("Insert table failed, error:%s", errormessage);
+					delete errormessage;
+					errormessage = NULL;
+					if ((result = sqlite3_exec(db, "drop savedata", NULL, NULL, &errormessage)) != SQLITE_OK)
+					{
+						log("Drop table failed, error:%s", errormessage);
+					}
+					break;
+				}
+			}
+		}
+	} while (0);
+	if (table != NULL)
+		sqlite3_free_table(table);
+	if (errormessage != NULL)
+		delete errormessage;
+	if ((result = sqlite3_close(db)) != SQLITE_OK)
+	{
+		log("Close database failed, error:%s", errormessage);
+		delete errormessage;
+		return;
+	}
+	saved = true;
+}
+void GameController::Load()
+{
+	sqlite3 *db;
+	int result;
+	String path = CCFileUtils::getInstance()->getWritablePath() + "Data";
+	char** table = NULL;
+	char * errormessage = NULL;
+	int r, c;
+	if ((result = sqlite3_open(path.getCString(), &db)) != SQLITE_OK)
+	{
+		log("Open database failed, error:%d", result);
+		return;
+	}
+	do
+	{
+		if ((result = sqlite3_get_table(db, "SELECT * FROM sqlite_master where type='table' and name='savedata'", &table, &r, &c, &errormessage)) != SQLITE_OK)
+		{
+			log("Quary table failed, error:%s", errormessage);
+			break;
+		}
+		if (r == 0)
+		{
+			Start();
+			break;
+		}
+		sqlite3_free_table(table);
+		if ((result = sqlite3_get_table(db, "SELECT * FROM savedata", &table, &r, &c, &errormessage)) != SQLITE_OK)
+		{
+			log("Quary table failed, error:%s", errormessage);
+			break;
+		}
+		this->checkerBoard->removeAllChildrenWithCleanup(true);
+		Reset();
+		for (int i = c; i < (r+1)*c; i+=c)
+		{
+			this->addBlock(atoi(table[i]), this->newBlock(atoi(table[i+1]), Color4F(atof(table[i+2]), atof(table[i+3]), atof(table[i+4]), 1)));
+		}
+	} while (0);
+	if (table != NULL)
+		sqlite3_free_table(table);
+	if (errormessage != NULL)
+		delete errormessage;
+	if ((result = sqlite3_close(db)) != SQLITE_OK)
+	{
+		log("Close database failed, error:%s", errormessage);
+		delete errormessage;
+		return;
+	}
+}
+bool GameController::CheckSave()
+{
+	sqlite3 *db;
+	int result;
+	bool re = false;
+	String path = CCFileUtils::getInstance()->getWritablePath() + "Data";
+	char** table = NULL;
+	char * errormessage = NULL;
+	int r, c;
+	if ((result = sqlite3_open(path.getCString(), &db)) != SQLITE_OK)
+	{
+		log("Open database failed, error:%d", result);
+		return false;
+	}
+	do
+	{
+		if ((result = sqlite3_get_table(db, "SELECT * FROM sqlite_master where type='table' and name='savedata'", &table, &r, &c, &errormessage)) != SQLITE_OK)
+		{
+			log("Quary table failed, error:%s", errormessage);
+			break;
+		}
+		if (r != 0)
+			re = true;
+	} while (0);
+	if (table != NULL)
+		sqlite3_free_table(table);
+	if (errormessage != NULL)
+		delete errormessage;
+	if ((result = sqlite3_close(db)) != SQLITE_OK)
+	{
+		log("Close database failed, error:%s", errormessage);
+		delete errormessage;
+	}
+	return re;
 }

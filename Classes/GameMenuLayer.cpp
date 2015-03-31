@@ -2,23 +2,35 @@
 #include "GameLayer.h"
 
 using namespace cocos2d;
-
-
-void Restart()
+void Newgame()
 {
-	Director::getInstance()->replaceScene(GameLayer::createScene());
+	auto scene = GameScene::create();
+	Director::getInstance()->replaceScene(scene);
+	scene->mainLayer->StartNewGame();
+}
+void Restart(Layer* menu)
+{
+	((GameLayer*)menu->getParent())->StartNewGame();
+	menu->removeFromParentAndCleanup(true);
 }
 void Resume(Layer* menu)
 {
 	menu->removeFromParentAndCleanup(true);
 }
-void MainMenu()
+void MainMenu(Layer *menu)
 {
+	((GameLayer*)menu->getParent())->SaveGame();
 	Director::getInstance()->replaceScene(MainMenuLayer::createScene());
 }
 void Exit()
 {
 	exit(0);
+}
+void Continue()
+{
+	auto scene = GameScene::create();
+	Director::getInstance()->replaceScene(scene);
+	scene->mainLayer->LoadGame();
 }
 bool GamePausedMenuLayer::init()
 {
@@ -40,9 +52,9 @@ bool GamePausedMenuLayer::init()
 	Button::FUNCTYPE temp = std::bind(Resume,this);
 	//auto temp = std::bind(&Restart);
 	buttons[0].setFunc(temp);
-	temp = Restart;
+	temp = std::bind(Restart, this);
 	buttons[1].setFunc(temp);
-	temp = MainMenu;
+	temp = std::bind(MainMenu, this);
 	buttons[2].setFunc(temp);	
 	temp = Exit;
 	buttons[3].setFunc(temp);
@@ -75,10 +87,10 @@ bool GameOverMenuLayer::init()
 	buttons[0].setLabel(Label::create("Restart", font, 200));
 	buttons[1].setLabel(Label::create("Main Menu", font, 200));
 	buttons[2].setLabel(Label::create("Exit Game", font, 200));
-	Button::FUNCTYPE temp = Restart;
+	Button::FUNCTYPE temp = std::bind(Restart, this);
 	//auto temp = std::bind(&Restart);
 	buttons[0].setFunc(temp);
-	temp = MainMenu;
+	temp = std::bind(MainMenu, this);
 	buttons[1].setFunc(temp);
 	temp = Exit;
 	buttons[2].setFunc(temp);
@@ -209,17 +221,20 @@ bool MainMenuLayer::init()
 	title->retain();
 	buttons[0].setLabel(Label::create("New Game", font, 200));
 	buttons[1].setLabel(Label::create("Continue", font, 200));
-	buttons[1].getLabel()->setTextColor(Color4B(140, 140, 140, 255));
-	buttons[1].Enable = false;
+	if (!GameLayer::CheckSaveData())
+	{
+		buttons[1].getLabel()->setTextColor(Color4B(140, 140, 140, 255));
+		buttons[1].Enable = false;
+	}
 	buttons[2].setLabel(Label::create("Score List", font, 200));	
 	buttons[2].getLabel()->setTextColor(Color4B(140, 140, 140, 255));
 	buttons[2].Enable = false;
 	buttons[3].setLabel(Label::create("Exit Game", font, 200));
-	Button::FUNCTYPE temp = Restart;
+	Button::FUNCTYPE temp = Newgame;
 	//auto temp = std::bind(&Restart);
 	buttons[0].setFunc(temp);
-
-	//buttons[1].setFunc(temp);
+	temp = Continue;
+	buttons[1].setFunc(temp);
 	//temp = MainMenu;
 	//buttons[2].setFunc(temp);
 	temp = Exit;

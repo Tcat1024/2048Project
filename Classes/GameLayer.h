@@ -4,12 +4,12 @@
 #include "cocos2d.h"
 
 class GameController;
+class GameScene;
 
 class GameLayer:public cocos2d::Layer
 {
 public:
 	int RowCount = 4;
-	static cocos2d::Scene* createScene();
 	virtual bool init();
 	CREATE_FUNC(GameLayer);
 	GameController* controller;
@@ -17,9 +17,19 @@ public:
 	{
 
 	}
+	void StartNewGame();
+	void LoadGame();
+	void SaveGame();
+	static bool CheckSaveData();
 	~GameLayer();
 private:
 	void onKeyPressed(cocos2d::EventKeyboard::KeyCode keycode, cocos2d::Event* event);
 };
-
+class GameScene :public cocos2d::Scene
+{
+public:
+	CREATE_FUNC(GameScene);
+	virtual bool init();
+	GameLayer *mainLayer;
+};
 #endif
